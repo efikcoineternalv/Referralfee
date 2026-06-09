@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EFC Referral Buy - Real World Benefits</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body { background: #0a0a0a; color: #fff; font-family: Arial; text-align: center; padding: 30px; }
+   .box { background: #111; padding: 30px; border-radius: 16px; max-width: 500px; margin: auto; border: 2px solid #f3ba2f; }
+    button { background: #f3ba2f; color: #000; padding: 15px 30px; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; margin: 10px; cursor: pointer; }
+    input { padding: 12px; margin: 10px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; width: 80%; }
+    h1 { color: #f3ba2f; }.gold { color: #f3ba2f; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Buy EFC & Support Human Life Economy</h1>
+    <p>Every purchase sends <span class="gold">4% directly to EFIKCOIN Treasury</span> for food, school fees, and family empowerment.</p>
+    <p>Treasury: 0x676c...59d0</p>
+
+    <button onclick="connect()">Connect Wallet</button>
+    <p id="wallet">Not connected</p>
+
+    <input id="bnbAmount" placeholder="BNB Amount" type="number" step="0.01">
+    <input id="refAddr" placeholder="Referrer Address - Optional">
+    <button onclick="buyEFC()">Buy EFC + Fund Real World Benefits</button>
+
+    <p>Your referral link: <br><span id="refLink">Connect wallet first</span></p>
+  </div>
+
+<script>
+const REFERRAL_ADDR = "YOUR_DEPLOYED_REFERRAL_CONTRACT"; // Replace after deploy
+const ABI = [{"inputs":[{"internalType":"address","name":"_referrer","type":"address"}],"name":"buyWithReferral","outputs":[],"stateMutability":"payable","type":"function"}];
+const TREASURY = "0x676cCf34C191a9D6EFE4B265b84877C619A559d0";
+
+let provider, signer, contract, userAddr;
+
+async function connect() {
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  userAddr = await signer.getAddress();
+  contract = new ethers.Contract(REFERRAL_ADDR, ABI, signer);
+  document.getElementById("wallet").innerText = "Connected: " + userAddr.slice(0,6) + "...";
+  document.getElementById("refLink").innerText = window.location.href.split('?')[0] + "?ref=" + userAddr;
+
+  // Auto-fill referrer from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const ref = urlParams.get('ref');
+  if(ref) document.getElementById("refAddr").value = ref;
+}
+
+async function buyEFC() {
+  const bnb = document.getElementById("bnbAmount").value;
+  let ref = document.getElementById("refAddr").value;
+  if(!ref) ref = TREASURY; // If no referrer, treasury gets the referral fee too
+  if(!bnb) return alert("Enter BNB amount");
+
+  const tx = await contract.buyWithReferral(ref, {value: ethers.utils.parseEther(bnb)});
+  await tx.wait();
+  alert("Success! EFC bought and treasury funded for real world benefits.");
+}
+</script>
+</body>
+</html>
